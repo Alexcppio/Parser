@@ -1,100 +1,99 @@
 #include "Analyzer.h"
 
-AnalyzeMail::AnalyzeMail(string sourceText)
+Analyzer::Analyzer(string sourceText, vector<pair<string, string>> lexems)
 {
+	this->index = index;
 	this->sourceText += sourceText;
+	this->lexems.assign(lexems.begin(), lexems.end());
+	foundStart = 0;
+	foundEnd = 0;
 }
 
-void AnalyzeMail::getTitle()
+void Analyzer::makeArticle()
 {
-	string headerStart = "<h1 class=\"hdr__inner\">";
-	string headerEnd = "</h1";
-	size_t foundStart = 0;
-	size_t foundEnd = 0;
-	if (sourceText.find(headerStart)) {
-		foundStart = sourceText.find(headerStart) + headerStart.length();
-		if (sourceText.find(headerEnd)) {
-			foundEnd = sourceText.find(headerEnd);
+
+	for (pair<string, string> n : lexems)
+	{
+		if (n.first == "headerStart")
+		{
+			foundStart = sourceText.find(n.second) + n.second.length();
+
+		}
+		else if (n.first == "headerEnd")
+		{
+			foundEnd = sourceText.find(n.second);
+			titleText.append(sourceText, foundStart, (foundEnd - foundStart));
 		}
 	}
-}
 
-void AnalyzeMail::getDate()
-{
-	string dateStart = "datetime=\"";
-	size_t foundStart = 0;
-	if (sourceText.find(dateStart)) {
-		foundStart = sourceText.find(dateStart) + dateStart.length();
+	for (pair<string, string> n : lexems)
+	{
+		if (n.first == "dateStart")
+		{
+		foundStart = sourceText.find(n.second) + n.second.length();
+		dateText.append(sourceText, foundStart, 10);
+		}
 	}
-}
+	
+	for (pair<string, string> n : lexems)
+	{
+		if (n.first == "articlePieceStart")
+		{
+			foundStart = sourceText.find(n.second) + n.second.length();
 
-void AnalyzeMail::getArticle()
-{
-	string articlePieceStart = "article__item article__item_alignment_left article__item_html\"><p>";
-	string articlePieceEnd = "</p";
-	string hrefSkipStart = "<a href";
-	string hrefSkipQuote = ">";
-	string hrefSkipEnd = "</a>";
-	string nobrSkipOpen = "nobr";
-	size_t foundStart = 0;
-	size_t foundEnd = 0;
+			for (pair<string, string> n : lexems)
+			{
+				if (n.first == "articlePieceEnd")
+				{
+					foundEnd = sourceText.find(n.second);
+					articleText.append(sourceText, foundStart, (foundEnd - foundStart));
+					articleText.append("\n");
+				}
+			}
+		}
+	}
+	
 	size_t i = 0;
-	int evenOdd = 0;
-	for (i = sourceText.find(articlePieceStart, i++); i != string::npos; i = sourceText.find(articlePieceStart, i + 1))
+	for (pair<string, string> n : lexems)
 	{
-		if (sourceText.find(articlePieceStart)) {
-			foundStart = sourceText.find(articlePieceStart, i++) + articlePieceStart.length();
-
-			if (sourceText.find(articlePieceEnd, foundStart)) {
-				foundEnd = sourceText.find(articlePieceEnd, foundStart);
-
-			}
-		}
-		articleText.append(sourceText, foundStart, (foundEnd - foundStart));
-		articleText.append("\n");
-	}
-	i = 0;
-	for (i = articleText.find(hrefSkipStart, i++); i != string::npos; i = articleText.find(hrefSkipStart, i + 1))
-	{
-		if (articleText.find(hrefSkipStart)) {
-			foundStart = articleText.find(hrefSkipStart);
-			foundEnd = articleText.find(hrefSkipQuote, foundStart);
-			articleText.erase(foundStart, (foundEnd - foundStart + 1));
-		}
-	}
-	i = 0;
-	for (i = articleText.find(hrefSkipEnd, i++); i != string::npos; i = articleText.find(hrefSkipEnd, i + 1))
-	{
-		if (articleText.find(hrefSkipEnd)) {
-			foundStart = articleText.find(hrefSkipEnd);
-			foundEnd = foundStart + hrefSkipEnd.length();
-			articleText.erase(foundStart, (foundEnd - foundStart + 1));
-		}
-	}
-
-	i = 0;
-	for (i = articleText.find(nobrSkipOpen, i++); i != string::npos; i = articleText.find(nobrSkipOpen, i + 1))
-	{
-		++evenOdd;
-		if (articleText.find(nobrSkipOpen)) {
-			foundStart = articleText.find(nobrSkipOpen);
-			foundEnd = foundStart + nobrSkipOpen.length();
-			if (evenOdd % 2 != 0) {
-				articleText.erase(foundStart - 1, (foundEnd - foundStart + 2));
-			}
-			else if (evenOdd % 2 == 0) {
-				articleText.erase(foundStart - 2, (foundEnd - foundStart + 3));
+		i = 0;
+		if (n.first == "hrefSkipStart")
+		{
+			for (i = articleText.find(n.second, i++); i != string::npos; i = articleText.find(n.second, i + 1))
+			{
+				if (articleText.find(n.second)) {
+					foundStart = articleText.find(n.second);
+					foundEnd = articleText.find(">", foundStart);
+					articleText.erase(foundStart, (foundEnd - foundStart + 1));
+				}
 			}
 		}
 	}
+
+	for (pair<string, string> n : lexems)
+	{
+		i = 0;
+		if (n.first == "parClose" || n.first == "quotes" || n.first == "parOpen" || n.first == "hrefSkipEnd" || n.first == "ndash" || n.first == "garb")
+		{
+			for (i = articleText.find(n.second, i++); i != string::npos; i = articleText.find(n.second, i + 1))
+			{
+				if (articleText.find(n.second)) {
+					foundStart = articleText.find(n.second);
+					foundEnd = foundStart + n.second.length();
+					articleText.erase(foundStart, (foundEnd - foundStart + 1));
+				}
+			}
+		}
+	}
+	
 }
 
-void AnalyzeMail::save(string path)
+void Analyzer::save(string path)
 {
-	std::ofstream fin(path);
+	std::ofstream fin(path, std::ios_base::out | std::ios_base::trunc);
 	fin << titleText << endl;
 	fin << dateText << endl;
 	fin << articleText << endl;
-	fin << "123" << endl;
+
 	fin.close();
 }

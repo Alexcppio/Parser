@@ -1,4 +1,4 @@
-#include "MainApp.h"
+ï»¿#include "MainApp.h"
 
 //Main window
 
@@ -15,7 +15,7 @@ MainApp::MainApp()
 	catch (const std::exception & e)
 	{
 		string expData = e.what();
-		MessageBox(nullptr, wstring(begin(expData), end(expData)).c_str(), L"Îøèáêà", MB_ICONERROR | MB_OK);
+		MessageBox(nullptr, wstring(begin(expData), end(expData)).c_str(), L"ÐžÑˆÐ¸Ð±ÐºÐ°", MB_ICONERROR | MB_OK);
 		ExitProcess(EXIT_FAILURE);
 	}
 }
@@ -114,7 +114,7 @@ LRESULT MainApp::dynamicWindowProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
 				if (adressHttps.empty())
 				{
-					MessageBox(this->hWndMain, L"Ââåäèòå àäðåñ", L"Èíôîðìàöèÿ", MB_ICONINFORMATION | MB_OK);
+					MessageBox(this->hWndMain, L"Ã‚Ã¢Ã¥Ã¤Ã¨Ã²Ã¥ Ã Ã¤Ã°Ã¥Ã±", L"ÃˆÃ­Ã´Ã®Ã°Ã¬Ã Ã¶Ã¨Ã¿", MB_ICONINFORMATION | MB_OK);
 					break;
 				}
 
@@ -125,23 +125,28 @@ LRESULT MainApp::dynamicWindowProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
 				if (adressSavePath.empty())
 				{
-					MessageBox(this->hWndMain, L"Ââåäèòå ïóòü", L"Èíôîðìàöèÿ", MB_ICONINFORMATION | MB_OK);
+					MessageBox(this->hWndMain, L"Ã‚Ã¢Ã¥Ã¤Ã¨Ã²Ã¥ Ã¯Ã³Ã²Ã¼", L"ÃˆÃ­Ã´Ã®Ã°Ã¬Ã Ã¶Ã¨Ã¿", MB_ICONINFORMATION | MB_OK);
 					break;
 				}
-
+				//////// Create textSource and lexem template /////////////
 				setlocale(LC_ALL, "Russian");
-				getURL(sourceText, adressHttps);
-				AnalyzeMail newobj(sourceText);
-				newobj.getTitle();
-				newobj.getDate();
-				newobj.getArticle();
-				newobj.save(adressSavePath);
-				//ShellExecute(0, L"open", L"test.txt", NULL, 0, SW_SHOWNORMAL);
-				sourceText = "";
+				initCurl(this->sourceText, adressHttps);
+				LexemsChoose lexemObj(adressHttps);
+				lexemObj.createChoosenLexem();
+
+				//////// Analyze ////////////
+				Analyzer analObj(this->sourceText, lexemObj.returnChoosenLexems());
+				analObj.makeArticle();
+
+				/////// Save ////////////
+				
+				analObj.Analyzer::save(adressSavePath);
+				ShellExecute(0, L"open", L"test.txt", NULL, 0, SW_SHOWNORMAL);
+
 			}
 			catch (...)
 			{
-				MessageBox(this->hWndMain, L"Íåâåðíûé ôîðìàò àäðåñà", L"Ïðåäóïðåæäåíèå", MB_ICONWARNING | MB_OK);
+				MessageBox(this->hWndMain, L"ÐÐµÐ²ÐµÑ€Ð½Ñ‹Ð¹ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚ Ð°Ð´Ñ€ÐµÑÐ°", L"ÐŸÑ€ÐµÐ´ÑƒÐ¿Ñ€ÐµÐ¶Ð´ÐµÐ½Ð¸Ðµ", MB_ICONWARNING | MB_OK);
 			}
 		}
 		break;
@@ -202,6 +207,10 @@ void MainApp::createControls()
 	using std::runtime_error;
 	using namespace std::string_literals;
 
+	TCHAR szPath[MAX_PATH];
+	DWORD result = GetModuleFileName(NULL, szPath, MAX_PATH);
+
+
 	if (this->hWndButtonOk = CreateWindowEx(
 		0,
 		L"BUTTON",
@@ -216,7 +225,7 @@ void MainApp::createControls()
 	if (this->hWndButtonCancel = CreateWindowEx(
 		0,
 		L"BUTTON",
-		L"Îòìåíà",
+		L"ÐžÑ‚Ð¼ÐµÐ½Ð°",
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 		420, 200, 150, 50, this->hWndMain,
 		reinterpret_cast<HMENU>(MainApp::ControlsID::CANCELBUTTON_ID),
@@ -238,7 +247,7 @@ void MainApp::createControls()
 	if (this->hWndGroupbox = CreateWindowEx(
 		0,
 		L"BUTTON",
-		L"Øàáëîí",
+		L"Ð¨Ð°Ð±Ð»Ð¾Ð½",
 		WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
 		20, 20, 180, 230, this->hWndMain,
 		reinterpret_cast<HMENU>(MainApp::ControlsID::GROUPBOX_ID),
@@ -282,7 +291,7 @@ void MainApp::createControls()
 	if (this->hWndEditAdress = CreateWindowEx(
 		WS_EX_CLIENTEDGE,
 		L"EDIT",
-		L"https://news.mail.ru/",
+		L"https://www.vesti.ru/article/2458794",
 		WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
 		220, 50, 350, 30, this->hWndMain,
 		reinterpret_cast<HMENU>(MainApp::ControlsID::EDITADDRESS_ID),
@@ -293,7 +302,7 @@ void MainApp::createControls()
 	if (this->hWndEditPath = CreateWindowEx(
 		WS_EX_CLIENTEDGE,
 		L"EDIT",
-		L"256",
+		szPath,
 		WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
 		220, 120, 280, 30, this->hWndMain,
 		reinterpret_cast<HMENU>(MainApp::ControlsID::EDITPATH_ID),

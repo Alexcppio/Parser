@@ -1,6 +1,8 @@
 #ifndef LEXSTRUCTS_H
 #define LEXSTRUCTS_H
 #include <iostream>
+#include <exception>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <utility>
@@ -13,18 +15,27 @@ using std::endl;
 class LexemsChoose
 {
 public:
-	int index = 0;
-	LexemsChoose();
+	LexemsChoose(string adressHttps);
 	void createChoosenLexem();
-	
+	vector<pair<string, string>> returnChoosenLexems();
+	int returnIndex();
+private:
+	string sourceText;
 	vector<pair<string, string>> lexems;
+	int index = -1;
+	vector <string> source{
+	"mail.ru",
+	"mk.ru",
+	"vesti.ru",
+	"rbc.ru"
+	};
 };
 
-class Mail
+struct Mail
 {
 public:
 	vector<pair<string, string>> lexems = {
-		{ "headerStart", "< h1 class = \"hdr__inner\">" },
+		{ "headerStart", "<h1 class=\"hdr__inner\">" },
 		{ "headerEnd", "</h1" },
 		{ "dateStart", "datetime=\"" },
 		{ "articlePieceStart", "article__item article__item_alignment_left article__item_html\"><p>"},
@@ -32,11 +43,12 @@ public:
 		{ "hrefSkipStart", "<a href" },
 		{ "hrefSkipQuote", ">" },
 		{ "hrefSkipEnd", "</a>" },
-		{ "nobrSkipOpen", "nobr"}
+		{ "nobrSkipOpen", "nobr"},
+		{ "contentSource", "<meta property =\"og:site_name\" content = \"Новости Mail.ru\">"}
 	};
 };
 
-class MKRU
+struct MKRU
 {
 public:
 	vector<pair<string, string>> lexems = {
@@ -51,23 +63,27 @@ public:
 	};
 };
 
-class Vesti
+struct Vesti
 {
 public:
 	vector<pair<string, string>> lexems = {
 		{ "headerStart", "<h1 class=\"article__title\">" },
 		{ "headerEnd", "</h1" },
-		{ "dateStart", "<div class=\"article__date\">" },
-		{ "articlePieceStart", "<div class=\"js - mediator - article\">"},
-		{ "articlePieceEnd", "<span class=\"article_end\"></span>" },
+		{ "dateStart", "<div class=\"article__date\">			" },
+		{ "articlePieceStart", "<div class=\"article__text\">"},
+		{ "articlePieceEnd", "<div class=\"vgtrk-cke_iframe\"" },
 		{ "hrefSkipStart", "<a href" },
-		{ "hrefSkipQuote", ">" },
-		{ "hrefSkipEnd", "</a>" },
+		{ "hrefSkipEnd", "</a" },
+		{ "parOpen", "<p" },
+		{ "parClose", "</p>" },
+		{ "quotes", "&quot" },
+		{ "ndash", "&ndash" },
+		{ "garb", "<div class=\"js-mediator-article\"" },
 		{ "contentSource", "<meta property=\"og:site_name\" content=\"vesti.ru\">"}
 	};
 };
 
-class RBC
+struct RBC
 {
 public:
 	vector<pair<string, string>> lexems = {
@@ -77,8 +93,9 @@ public:
 		{ "articlePieceStart", "<div class=\"article g - relative js - rbcslider - article \">"},
 		{ "articlePieceEnd", "<div class=\"article__tags\">" },
 		{ "hrefSkipStart", "<a href" },
-		{ "hrefSkipQuote", ">" },
 		{ "hrefSkipEnd", "</a>" },
+		{ "parOpen", "<p>" },
+		{ "parClose", "</p>" },
 		{ "nobrSkipOpen", "&nbsp"},
 		{ "contentSource", "<meta property=\"og:site_name\" content=\"РБК\">"}
 	};
